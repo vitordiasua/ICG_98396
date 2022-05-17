@@ -222,7 +222,7 @@ function createCar(){
 
 
 function createLandscape(){
-    const texture = new THREE.TextureLoader().load( "./PJ/textures/grass.jpg" );
+    const texture = new THREE.TextureLoader().load( "textures/grass.jpg" );
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set( 50, 50 ); 
 
@@ -235,7 +235,7 @@ function createLandscape(){
     
     groundObject.receiveShadow = true;
 
-    const wallTexture = new THREE.TextureLoader().load( "./PJ/textures/forest.jpg" );
+    const wallTexture = new THREE.TextureLoader().load( "textures/forest.jpg" );
     wallTexture.wrapS = wallTexture.wrapT = wallTexture.RepeatWrapping;
 
     const wallGeometry = new THREE.PlaneGeometry(1000, 500);
