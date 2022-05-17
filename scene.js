@@ -548,8 +548,7 @@ function computeFrame(time) {
     console.log(accelaration);
 
 
-    //sceneElements.camera.lookAt(car.position );
-    sceneElements.camera.position.set(0,900, 400);
+    sceneElements.camera.lookAt(car.position );
 
     carBoundingBox.copy( car.getObjectByName("bottomObject").geometry.boundingBox ).applyMatrix4( car.getObjectByName("bottomObject").matrixWorld );
 
