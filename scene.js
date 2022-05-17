@@ -1,9 +1,20 @@
 "use strict";
 
-var car_x = 2;
-var car_z = 2.3;
+//  Adapted from classes scripts
+//      Daniel Rohmer tutorial
+// 		https://imagecomputing.net/damien.rohmer/teaching/2019_2020/semester_1/MPRI_2-39/practice/threejs/content/000_threejs_tutorial/index.html
+//
+//      AND
+//      https://www.ua.pt/pt/p/10320092
+// 		J. Madeira - April 2021
+//
+//
+//
+//      Vítor Dias 98396
 
-// Save elements of the scene
+
+
+// Object structure to store the scene elements
 const sceneElements = {
     sceneGraph: null,
     camera: null,
@@ -20,13 +31,15 @@ helper.initScene(sceneElements);
 loadObjects(sceneElements.sceneGraph);
 requestAnimationFrame(computeFrame);
 
+
+
 // HANDLING EVENTS
 
 // Event Listeners
 
 window.addEventListener('resize', resizeWindow);
 
-//To keep track of the keyboard - WASD
+// To keep track of the keyboard - WASD and Arrows
 var keyD = false, keyA = false, keyS = false, keyW = false;
 document.addEventListener('keydown', onDocumentKeyDown, false);
 document.addEventListener('keyup', onDocumentKeyUp, false);
@@ -42,41 +55,70 @@ function resizeWindow(eventParam) {
     sceneElements.renderer.setSize(width, height);
 }
 
+// Key down events
 function onDocumentKeyDown(event) {
     switch (event.keyCode) {
         case 68: //d
             keyD = true;
             break;
+        case 39: //right arrow
+            keyD = true;
+            break;
         case 83: //s
+            keyS = true;
+            break;
+        case 40: //down arrow
             keyS = true;
             break;
         case 65: //a
             keyA = true;
             break;
+        case 37: //left key
+            keyA = true;
+            break;
         case 87: //w
+            keyW = true;
+            break;
+        case 38: //up arrow
             keyW = true;
             break;
     }
 }
+
+// Key up events
 function onDocumentKeyUp(event) {
     switch (event.keyCode) {
         case 68: //d
             keyD = false;
             break;
+        case 39: //right arrow
+            keyD = false;
+            break;
         case 83: //s
+            keyS = false;
+            break;
+        case 40: //down arrow
             keyS = false;
             break;
         case 65: //a
             keyA = false;
             break;
+        case 37: //left arrow
+            keyA = false;
+            break;
         case 87: //w
+            keyW = false;
+            break;
+        case 38: //up arrow
             keyW = false;
             break;
     }
 }
 
-//////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////////////////////////////
+//  CAR CREATION FUNCTIONS
+//////////////////////////////////////////////////////////////////
 function createWheel(){
     const cylinderGeometry = new THREE.CylinderGeometry( 1, 1, 1, 35 );
     const cylinderMaterial = new THREE.MeshBasicMaterial( {color: 0x444444} );
@@ -101,7 +143,6 @@ function createWheel(){
 
     return wheel
 }
-
 
 function createCar(){
     const carX = 4;
@@ -221,6 +262,9 @@ function createCar(){
 }
 
 
+//////////////////////////////////////////////////////////////////
+//  LANDSCAPE/ROAD CREATION FUNCTIONS
+//////////////////////////////////////////////////////////////////
 function createLandscape(){
     const texture = new THREE.TextureLoader().load( "textures/grass.jpg" );
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -230,7 +274,7 @@ function createLandscape(){
     const groundMaterial = new THREE.MeshPhongMaterial({ color: 'rgb(0, 200, 0)', side: THREE.DoubleSide, map: texture });
     const groundObject = new THREE.Mesh(groundGeometry, groundMaterial);
 
-    groundObject.translateY(-0.5);
+    groundObject.translateY(-0.1);
     groundObject.rotateX(Math.PI / 2);
     
     groundObject.receiveShadow = true;
@@ -271,7 +315,6 @@ function createLandscape(){
 
     return landscape;
 }
-
 
 function createRoadPart(length){
     const planeGeometry = new THREE.PlaneGeometry(25, length);
@@ -401,15 +444,9 @@ function createCircuit(){
     return circuit;
 }
 
-// Create and insert in the scene graph the models of the 3D scene
-function loadObjects(sceneGraph) {
-
-    sceneGraph.add(createLandscape());
-    sceneGraph.add(createCircuit());
-    sceneGraph.add(createCar());
-}
 
 
+// Create the race checkpoints
 function createCheckpoint(x, z){
     const geometry = new THREE.CylinderGeometry( 12.5, 12.5, 100, 40 );
     const material = new THREE.MeshPhongMaterial( {color: 0xaaaaff, transparent: true, opacity:0.5} );
@@ -420,6 +457,7 @@ function createCheckpoint(x, z){
     return cp;
 }
 
+// Fill the checkpoints array
 function fillCheckpoints(){
     const checkpoints = [];
 
@@ -440,25 +478,45 @@ function fillCheckpoints(){
     return checkpoints;
 }
 
-var accelaration = 0;
+// Create and insert in the scene graph the models of the 3D scene
+function loadObjects(sceneGraph) {
 
+    sceneGraph.add(createLandscape());
+    sceneGraph.add(createCircuit());
+    sceneGraph.add(createCar());
+}
+
+// Create the car bounding box
 var carBoundingBox = new THREE.Box3();
+
+// Bounding helper for the car
+// Uncomment if needed
 //const boundinghelper = new THREE.Box3Helper( carBoundingBox, 0xffff00 );
 //sceneElements.sceneGraph.add( boundinghelper );
 
-var checkpointsArray = fillCheckpoints();
-checkpointsArray.forEach(element => {
-    sceneElements.sceneGraph.add(element);    
-});
+// Set the checkpoints array
+const checkpointsArray = fillCheckpoints();
 
-//sceneElements.sceneGraph.add(checkpointsArray[0]);    
-
-
-const startingCheckpointCoordinates = new THREE.Vector3(checkpointsArray[0].position.x, 0, checkpointsArray[0].position.z);
-var checkpointBoundingBox = new THREE.Sphere(startingCheckpointCoordinates, 12.5);
-
+// Set the first checkpoint and add the bounding sphere
 var checkpoint = checkpointsArray[0];
+checkpoint.name = "checkpoint1";
+sceneElements.sceneGraph.add(checkpoint);    
 
+var checkpointCoordinates = new THREE.Vector3(checkpoint.position.x, 0, checkpoint.position.z);
+var checkpointBoundingSphere = new THREE.Sphere(checkpointCoordinates, 12.5);
+
+
+// Car accelaration values
+var accelaration = 0;
+
+// Index to use the checkpoints array
+var checkpointIndex = 1;
+
+// Car part dimensions to handle the wheels
+var car_x = 2;
+var car_z = 2.3;
+
+// Function for frame updates
 function computeFrame(time) {
 
     const car = sceneElements.sceneGraph.getObjectByName("car");
@@ -468,19 +526,19 @@ function computeFrame(time) {
     const rightBackWheel = car.getObjectByName("rightBackWheel");
 
 
-    if (keyD) {
+    if (keyD) {     // Rotate right
         rightFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         rightFrontWheel.rotateZ(- Math.PI/2);
 
         leftFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         leftFrontWheel.rotateZ( - Math.PI/2);
         leftFrontWheel.rotateX( - Math.PI / 2);
-        if(accelaration < 0)
+        if(accelaration < 0)     // If gowing forward
             car.rotateY(-0.01);
-        else
-            car.rotateY(-0.01 * -1);
+        else if(accelaration > 0)// If gowing backwards
+            car.rotateY(0.01);
     }
-    else{
+    else{           // Reset wheels position due to 2 keys pressed conflict
         rightFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         rightFrontWheel.rotateZ(Math.PI / 2);
         rightFrontWheel.rotateX(- Math.atan(car_x/car_z));
@@ -489,43 +547,38 @@ function computeFrame(time) {
         leftFrontWheel.rotateZ(-Math.PI / 2);
         leftFrontWheel.rotateX(- Math.atan(car_x/car_z));
     }
-    if (keyW ) {
+    if (keyW ) {    // Accelarate
         if(accelaration > -2)
             accelaration -= 0.003;
     }
-    if(!keyW && accelaration < 0){
-        accelaration += 0.001
-    }
-    if(!keyW && !keyS && accelaration < 0){
-        accelaration += 0.0001
-    }
-    if (keyA) {
+    if (keyA) {     // Rotate Left
         leftFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         leftFrontWheel.rotateZ(Math.PI / 2);
 
         rightFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         rightFrontWheel.rotateZ(-Math.PI / 2);
         rightFrontWheel.rotateX(-Math.PI / 2);
-        if(accelaration < 0){
-            car.rotateY(0.01);
-        }
-        else if(accelaration > 0)
+        if(accelaration < 0)           // If going forwards
+            car.rotateY(0.01);       
+        else if(accelaration > 0)      // If going backwards
             car.rotateY(0.01 * -1);
     }
-    if (keyS) {
+    if (keyS) {         // Break/Go backwards
         if (accelaration < 0.3) 
-            accelaration += 0.004;
+            accelaration += 0.01;
     }
-    if(!keyS && accelaration > 0){
-        accelaration -=0.001;
+    if(!keyW && !keyS && accelaration < 0){ // If no movement key is pressed and moving forward
+        accelaration += 0.002
     }
-    if(keyD && keyA && accelaration != 0){
-        if( accelaration < 0)
+    else if(!keyW && !keyS && accelaration > 0) // If no movement key is pressed and moving backward
+        accelaration -= 0.002
+    if(keyD && keyA && accelaration != 0){ // Solve key conflit
+        if( accelaration < 0)   // If going forwards
             car.rotateY(0.01);
-        else
+        else                    // If going backwards
             car.rotateY(0.01 * -1);
     }
-    if(!keyD && !keyA){
+    if(!keyD && !keyA){  // If no rotating key is pressed
         leftFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         leftFrontWheel.rotateZ(Math.PI / 2);
         leftFrontWheel.rotateX(- Math.atan(car_x/car_z));
@@ -534,26 +587,37 @@ function computeFrame(time) {
         rightFrontWheel.rotateZ(-Math.PI / 2);
         rightFrontWheel.rotateX(- Math.atan(car_x/car_z));
     }
+
+    // Set accelaration to 0 if it is close from that
     if(accelaration > -0.001 && accelaration < 0.001 ){
         accelaration = 0;
     }
 
-
+    // Move the car
     car.translateZ(accelaration);
 
+    // Rotate the wheels
     rightFrontWheel.rotateY(accelaration*50);
     leftFrontWheel.rotateY(-accelaration*50);
     rightBackWheel.rotateY(accelaration);
     leftBackWheel.rotateY(-accelaration);
-    console.log(accelaration);
 
-
+    // Keep the camera looking at the car
     sceneElements.camera.lookAt(car.position );
 
+    // Reset car bounding box
     carBoundingBox.copy( car.getObjectByName("bottomObject").geometry.boundingBox ).applyMatrix4( car.getObjectByName("bottomObject").matrixWorld );
 
-    if( carBoundingBox.intersectsSphere(checkpointBoundingBox)){
-        console.log("HERE");
+    // Check if car hits a checkpoint
+    if( carBoundingBox.intersectsSphere(checkpointBoundingSphere)){
+        sceneElements.sceneGraph.remove(sceneElements.sceneGraph.getObjectByName("checkpoint" + checkpointIndex));
+        if(checkpointIndex > 5)
+        checkpointIndex = 0;
+        checkpoint = checkpointsArray[checkpointIndex++];
+        checkpoint.name = "checkpoint" + checkpointIndex;
+        sceneElements.sceneGraph.add(checkpoint);
+        checkpointCoordinates = new THREE.Vector3(checkpoint.position.x, 0, checkpoint.position.z);
+        checkpointBoundingSphere = new THREE.Sphere(checkpointCoordinates, 12.5);
     }
 
     // Rendering
