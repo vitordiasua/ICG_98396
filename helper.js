@@ -90,6 +90,11 @@ const helper = {
             sound.play();
         });
 
+        // Stats panel
+        sceneElements.stats = new Stats();
+        sceneElements.stats.showPanel( 1 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+        document.body.appendChild( sceneElements.stats.dom );
+        
 
         // Connect the scene to the HTML element
         const htmlElement = document.querySelector("#scenario");

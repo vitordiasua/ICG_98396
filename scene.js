@@ -22,6 +22,7 @@ const sceneElements = {
     firstPersonControl: null,
     renderer: null,
     clock: null,
+    stats: null,
 };
 
 
@@ -732,15 +733,19 @@ var checkpointIndex = 1;
 var car_x = 2;
 var car_z = 2.3;
 
-
+// Angle of the steering wheel
 var steeringWheelAngle = 0;
 
+// Boolean to check if camera needs to reset
 var cameraControl = false;
 
+// Laps counter
 var laps = 0;
 
 // Function for frame updates
 function computeFrame(time) {
+    sceneElements.stats.begin();
+
 
     const car = sceneElements.sceneGraph.getObjectByName("car");
 
@@ -765,9 +770,9 @@ function computeFrame(time) {
         leftFrontWheel.rotateZ( - Math.PI/2);
         leftFrontWheel.rotateX( - Math.PI / 2);
         if(accelaration < 0)     // If gowing forward
-            car.rotateY(-0.01);
+            car.rotateY(-0.02);
         else if(accelaration > 0)// If gowing backwards
-            car.rotateY(0.01);
+            car.rotateY(0.02);
 
     }
     else{           // Reset wheels position due to 2 keys pressed conflict
@@ -782,7 +787,7 @@ function computeFrame(time) {
     }
     if (keyW ) {    // Accelarate
         if(accelaration > -2)
-            accelaration -= 0.003;
+            accelaration -= 0.03;
     }
     if (keyA) {     // Rotate Left
         leftFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
@@ -795,9 +800,9 @@ function computeFrame(time) {
         rightFrontWheel.rotateZ(-Math.PI / 2);
         rightFrontWheel.rotateX(-Math.PI / 2);
         if(accelaration < 0)           // If going forwards
-            car.rotateY(0.01);       
+            car.rotateY(0.02);       
         else if(accelaration > 0)      // If going backwards
-            car.rotateY(0.01 * -1);
+            car.rotateY(0.02 * -1);
     }
     if (keyS) {         // Break/Go backwards
         if (accelaration < 0.3) 
@@ -810,9 +815,9 @@ function computeFrame(time) {
         accelaration -= 0.002
     if(keyD && keyA && accelaration != 0){ // Solve key conflit
         if( accelaration < 0)   // If going forwards
-            car.rotateY(0.01);
+            car.rotateY(0.02);
         else{                    // If going backwards
-            car.rotateY(0.01 * -1);
+            car.rotateY(0.02 * -1);
         }
 
         steer.rotation.z = (Math.PI / 4) + (Math.PI / 6);
@@ -918,6 +923,8 @@ function computeFrame(time) {
 
     // Rendering
     helper.render(sceneElements);
+
+    sceneElements.stats.end();
 
     // Call for the next frame
     requestAnimationFrame(computeFrame);
