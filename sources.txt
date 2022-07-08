@@ -1,0 +1,7 @@
+textures:
+	grass.jpg: https://media.freestocktextures.com/cache/9f/1d/9f1d02bb3482b1387dc452d3da7c5592.jpg
+
+	forest.jpg: https://c.stocksy.com/a/NBO500/z9/1284601.jpg
+
+music:
+	https://www.youtube.com/watch?v=_wbvHl9aPrs&ab_channel=SergePavkinMusic

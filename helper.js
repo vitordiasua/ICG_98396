@@ -19,6 +19,9 @@ const helper = {
     // Initialize scene
     initScene : function (sceneElements){
 
+        //create clock for timing
+        sceneElements.clock = new THREE.Clock();
+
         // Create Scene and configure it
         sceneElements.sceneGraph = new THREE.Scene();
         
@@ -63,8 +66,29 @@ const helper = {
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         // Create Orbit Controls around the camera
-        sceneElements.control = new THREE.OrbitControls(camera, renderer.domElement);
-        sceneElements.control.screenSpacePanning = true;
+        sceneElements.orbitControl = new THREE.OrbitControls(camera, renderer.domElement);
+        sceneElements.orbitControl.screenSpacePanning = true;
+        sceneElements.orbitControl.maxPolarAngle = Math.PI / 2;
+
+        // Create First Person Controls
+        //sceneElements.firstPersonControl = new THREE.FirstPersonControls( camera, renderer.domElement );
+        //sceneElements.firstPersonControl.lookSpeed = 0.1
+
+        // create an AudioListener and add it to the camera
+        const listener = new THREE.AudioListener();
+        camera.add( listener );
+
+        // create a global audio source
+        const sound = new THREE.Audio( listener );
+
+        // load a sound and set it as the Audio object's buffer
+        const audioLoader = new THREE.AudioLoader();
+        audioLoader.load( './sound/hard_racing.mp3', function( buffer ) {
+            sound.setBuffer( buffer );
+            sound.setLoop( true );
+            sound.setVolume( 0.2 );
+            sound.play();
+        });
 
 
         // Connect the scene to the HTML element

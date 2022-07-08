@@ -1,0 +1,27 @@
+#checkpoints {
+	position: absolute;
+	top: 5%;
+    right: 5%;
+	width: 100%;
+	text-align: right;
+	z-index: 100;
+	display:block;
+    color: royalblue;
+    border-color: black;
+    font-size: xx-large;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+#laps {
+	position: absolute;
+	top: 10%;
+    right: 5%;
+	width: 100%;
+	text-align: right;
+	z-index: 100;
+	display:block;
+    color: royalblue;
+    border-color: black;
+    font-size: xx-large;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}

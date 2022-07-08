@@ -18,8 +18,10 @@
 const sceneElements = {
     sceneGraph: null,
     camera: null,
-    control: null,  
+    orbitControl: null,  
+    firstPersonControl: null,
     renderer: null,
+    clock: null,
 };
 
 
@@ -40,10 +42,10 @@ requestAnimationFrame(computeFrame);
 window.addEventListener('resize', resizeWindow);
 
 // To keep track of the keyboard - WASD and Arrows
-var keyD = false, keyA = false, keyS = false, keyW = false;
+var keyD = false, keyA = false, keyS = false, keyW = false, key1 = false, key2 = false;
 document.addEventListener('keydown', onDocumentKeyDown, false);
 document.addEventListener('keyup', onDocumentKeyUp, false);
-
+var cameraType = "ORBIT";
 // Update render image size and camera aspect when the window is resized
 function resizeWindow(eventParam) {
     const width = window.innerWidth;
@@ -82,6 +84,12 @@ function onDocumentKeyDown(event) {
         case 38: //up arrow
             keyW = true;
             break;
+        case 49: //no 1 key
+            key1 = true;
+            break;
+        case 50: //no 2 key
+            key2 = true;
+            break;
     }
 }
 
@@ -112,6 +120,12 @@ function onDocumentKeyUp(event) {
         case 38: //up arrow
             keyW = false;
             break;
+        case 49: //no 1 key
+            key1 = false;
+            break;
+        case 50: //no 2 key
+            key2 = false;
+            break;
     }
 }
 
@@ -137,21 +151,48 @@ function createWheel(){
     rim.castShadow = true;
     rim.receiveShadow = true;
 
-    const wheel = new THREE.Group();
+    const wheel = new THREE.Object3D();
     wheel.add(tire);
     wheel.add(rim);
 
     return wheel
 }
 
-function createCar(){
+function createSteeringWheel(){
+    const steerGeometry = new THREE.RingGeometry( 0.5, 0.3, 1 );
+    const steerMaterial = new THREE.MeshPhongMaterial( { color: 0x000000, side: THREE.DoubleSide } );
+    const steerMesh = new THREE.Mesh( steerGeometry, steerMaterial );
+
+    steerMesh.translateY(3);
+    steerMesh.translateZ(-1.8);
+    steerMesh.rotateZ(Math.PI / 6);
+
+    const torusGeometry = new THREE.TorusGeometry( 0.5, 0.1, 15, 100, 5 );
+    const torus = new THREE.Mesh( torusGeometry, steerMaterial );
+
+    torus.translateY(3);
+    torus.translateZ(-1.8);
+    torus.rotateZ(4 * Math.PI / 6 + 0.1);
+
+    torus.name = "torus";
+    steerMesh.name = "steer";
+
+    const group = new THREE.Object3D();
+    group.add(steerMesh);
+    group.add(torus);
+
+    return group;
+}
+
+function createCar(colorSelected, dummy = false){
     const carX = 4;
     const carZ = 9;
 
     const bottomGeometry = new THREE.BoxGeometry(carX, 2, carZ);
-    const bottomMaterial = new THREE.MeshPhongMaterial({ color:0xff0000 });
+    const bottomMaterial = new THREE.MeshPhongMaterial({ color:colorSelected, transparent: true, opacity:0 });
     const bottomObject = new THREE.Mesh(bottomGeometry, bottomMaterial);
-    bottomObject.name = "bottomObject";
+    if(dummy == false)
+        bottomObject.name = "bottomObject";
     bottomObject.geometry.computeBoundingBox();
 
     bottomObject.translateY(2);
@@ -159,19 +200,75 @@ function createCar(){
     bottomObject.castShadow = true;
     bottomObject.receiveShadow = true;
 
+    const sideGeometry = new THREE.BoxGeometry( 9, 2, 0.5 );
+    const frontGeometry = new THREE.BoxGeometry( 4, 2, 0.5 );
+    const topGeometry = new THREE.BoxGeometry( 2, 4, 0.5 );
+    const botGeometry = new THREE.BoxGeometry( 9, 4, 1.2 );
+    const botMaterial = new THREE.MeshPhongMaterial( {color: 0x555555, side: THREE.DoubleSide} );
+    const sideMaterial = new THREE.MeshPhongMaterial( {color: colorSelected, side: THREE.DoubleSide} );
+    const side1 = new THREE.Mesh( sideGeometry, sideMaterial );
+    const side2 = new THREE.Mesh( sideGeometry, sideMaterial );
+    const front = new THREE.Mesh(frontGeometry, sideMaterial);
+    const back = new THREE.Mesh(frontGeometry, sideMaterial);
+    const bot = new THREE.Mesh(botGeometry, botMaterial);
+    const top = new THREE.Mesh(topGeometry, sideMaterial);
+    
+    side1.translateY(2);
+    side1.translateX(1.9);
+    side1.rotateY(Math.PI / 2);
+
+    side1.castShadow = true;
+    side1.receiveShadow = true;
+
+    side2.translateY(2);
+    side2.translateX(-1.9);
+    side2.rotateY(Math.PI / 2);
+
+    side2.castShadow = true;
+    side2.receiveShadow = true;
+
+    front.translateY(2);
+    front.translateZ(-4.3);
+
+    front.castShadow = true;
+    front.receiveShadow = true;
+
+    back.translateY(2);
+    back.translateZ(4.3);
+
+    back.castShadow = true;
+    back.receiveShadow = true;
+
+    bot.translateY(1.5);
+    bot.rotateY(Math.PI / 2);
+    bot.rotateX(Math.PI / 2);
+
+    bot.castShadow = true;
+    bot.receiveShadow = true;
+
+    top.translateZ(-3);
+    top.translateY(2.7);
+    top.rotateY(Math.PI / 2);
+    top.rotateX(Math.PI / 2);
+
+    top.castShadow = true;
+    top.receiveShadow = true;
+
     const leftFrontWheel = createWheel();
     leftFrontWheel.translateX(-carX/2);
     leftFrontWheel.translateZ(-carZ/2 + 2.2);
     leftFrontWheel.translateY(1);
     leftFrontWheel.rotateZ(Math.PI / 2);
-    leftFrontWheel.name = "leftFrontWheel";
+    if(dummy == false)
+        leftFrontWheel.name = "leftFrontWheel";
 
     const rightFrontWheel = createWheel();
     rightFrontWheel.translateX(carX/2);
     rightFrontWheel.translateZ(-carZ/2 + 2.2);
     rightFrontWheel.translateY(1);
     rightFrontWheel.rotateZ(-Math.PI / 2);
-    rightFrontWheel.name = "rightFrontWheel";
+    if(dummy == false)
+        rightFrontWheel.name = "rightFrontWheel";
 
 
     const rightBackWheel = createWheel();
@@ -179,7 +276,9 @@ function createCar(){
     rightBackWheel.translateZ(carZ/2 - 2.2);
     rightBackWheel.translateY(1);
     rightBackWheel.rotateZ(-Math.PI / 2);
-    rightBackWheel.name = "rightBackWheel";
+    
+    if(dummy == false)
+        rightBackWheel.name = "rightBackWheel";
 
 
     const leftBackWheel = createWheel();
@@ -187,7 +286,9 @@ function createCar(){
     leftBackWheel.translateZ(carZ/2 - 2.2);
     leftBackWheel.translateY(1);
     leftBackWheel.rotateZ(Math.PI / 2);
-    leftBackWheel.name = "leftBackWheel";
+
+    if(dummy == false)
+        leftBackWheel.name = "leftBackWheel";
 
     
     const length = 1.8, width = 0.5;
@@ -207,7 +308,7 @@ function createCar(){
         bevelSegments: 2
     };
     const roofGeometry = new THREE.ExtrudeGeometry( shape, extrudeSettings );
-    const roofMaterial = new THREE.MeshPhongMaterial( { color: 0x0000ff } );
+    const roofMaterial = new THREE.MeshPhongMaterial( { color: colorSelected , transparent: true, opacity:0.3 } );
     const roofMesh = new THREE.Mesh( roofGeometry, roofMaterial ) ;
 
     roofMesh.castShadow = true;
@@ -217,46 +318,109 @@ function createCar(){
     roofMesh.translateX(-0.9);
     roofMesh.translateZ(-1.5);
 
-
-
-    const length2 = 3.6, width2 = 1.6;
-    const shape2 = new THREE.Shape();
-    shape2.moveTo( 0,0 );
-    shape2.lineTo( 0, width2 );
-    shape2.lineTo( length2, width2 );
-    shape2.lineTo( length2, 0 );
-    shape2.lineTo( 0, 0 );
-    const extrudeSettings2 = {
-        steps: 2,
-        depth: 4.5,
-        bevelEnabled: true,
-        bevelThickness: 1,
-        bevelSize: 0,
-        bevelOffset: 0,
-        bevelSegments: 2
-    };
-    const roofTopGeometry = new THREE.ExtrudeGeometry( shape2, extrudeSettings2 );
-    const roofTopMaterial = new THREE.MeshPhongMaterial( { color: 0xff0000 } );
-    const roofTopMesh = new THREE.Mesh( roofTopGeometry, roofTopMaterial ) ;
     
-    roofTopMesh.castShadow = true;
-    roofTopMesh.receiveShadow = true;
+    const chairBotGeometry = new THREE.BoxGeometry(2, 2, 0.2);
+    const chairMaterial = new THREE.MeshPhongMaterial({ color:0x222222 });
+    const chairBot = new THREE.Mesh(chairBotGeometry, chairMaterial);
 
-    roofTopMesh.translateY(3);
-    roofTopMesh.translateX(-1.8);
-    roofTopMesh.translateZ(-1.2);
+    chairBot.translateY(2.5);
+    chairBot.rotateX(Math.PI / 2);
+
+    const chairTopGeometry = new THREE.BoxGeometry(2.5, 2, 0.2);
+    const chairTop = new THREE.Mesh(chairTopGeometry, chairMaterial);
+
+    chairTop.translateY(3);
+    chairTop.translateZ(1.5);
+    chairTop.rotateZ(Math.PI / 2);
+    chairTop.rotateY(- Math.PI / 10);
 
 
-    const group = new THREE.Group();
+    const markGeometry = new THREE.CylinderGeometry( 0.2, 0.2, 0.2, 35 );
+    const markMaterial = new THREE.MeshPhongMaterial({ color:0x555555 });
+    const markObject = new THREE.Mesh(markGeometry, markMaterial);
+
+    if(dummy == false)
+        markObject.name = "mark";
+
+    markObject.translateZ(-4.5);
+    markObject.translateY(3);
+    markObject.rotateX(Math.PI / 2);
+
+
+    const roofBaseGeometry = new THREE.BoxGeometry(0.5, 1.8, 0.5);
+    const roofBaseMaterial = new THREE.MeshPhongMaterial({ color:colorSelected });
+    const roofBase1 = new THREE.Mesh(roofBaseGeometry, roofBaseMaterial);
+    const roofBase2 = new THREE.Mesh(roofBaseGeometry, roofBaseMaterial);
+    const roofBase3 = new THREE.Mesh(roofBaseGeometry, roofBaseMaterial);
+    const roofBase4 = new THREE.Mesh(roofBaseGeometry, roofBaseMaterial);
+
+    roofBase1.castShadow = true;
+    roofBase1.receiveShadow = true;
+    roofBase2.castShadow = true;
+    roofBase2.receiveShadow = true;
+    roofBase3.castShadow = true;
+    roofBase3.receiveShadow = true;
+    roofBase4.castShadow = true;
+    roofBase4.receiveShadow = true;
+
+    roofBase1.translateY(3.8);
+    roofBase1.translateZ(-2);
+    roofBase1.translateX(-1.8);
+
+    roofBase2.translateY(3.8);
+    roofBase2.translateZ(4);
+    roofBase2.translateX(-1.8);
+
+    roofBase3.translateY(3.8);
+    roofBase3.translateZ(4);
+    roofBase3.translateX(1.8);
+
+    roofBase4.translateY(3.8);
+    roofBase4.translateZ(-2);
+    roofBase4.translateX(1.8);
+
+
+    const roofTopGeometry = new THREE.BoxGeometry(4, 0.5, 6.8);
+    const roofTopMaterial = new THREE.MeshPhongMaterial({ color:colorSelected });
+    const roofTop = new THREE.Mesh(roofTopGeometry, roofTopMaterial);
+
+    roofTop.castShadow = true;
+    roofTop.receiveShadow = true;
+
+    roofTop.translateY(4.5);
+    roofTop.translateZ(1);
+
+    const steeringWheel = createSteeringWheel();
+    if(dummy == false)
+        steeringWheel.name = "steeringWheel";
+
+
+    const group = new THREE.Object3D();
     group.add(bottomObject)
+    group.add(side1);
+    group.add(side2);
+    group.add(front);
+    group.add(back);
+    group.add(bot);
     group.add(rightFrontWheel);
     group.add(leftFrontWheel);
     group.add(rightBackWheel);
     group.add(leftBackWheel);
     group.add(roofMesh);
-    group.add(roofTopMesh);
-    group.name = "car";
-    group.add(sceneElements.camera);
+    group.add(top);
+    group.add(chairBot);
+    group.add(chairTop);
+    group.add(roofBase1);
+    group.add(roofBase2);
+    group.add(roofBase3);
+    group.add(roofBase4);
+    group.add(roofTop);
+    group.add(steeringWheel);
+    if(dummy == false){
+        group.name = "car";
+        group.add(sceneElements.camera);
+    }
+    group.add(markObject);
 
     return group
 }
@@ -425,6 +589,47 @@ function createCircuit(){
     curvePart10.translateY(-300);
     curvePart10.rotateZ( Math.PI);
 
+    const dummyCar = createCar(0x0000ff, true);
+    dummyCar.translateX(20);
+    dummyCar.translateZ(10);
+    dummyCar.rotateY(Math.PI / 2);
+    const dummyCar2 = createCar(0x00ffff, true);
+    dummyCar2.translateX(20);
+    dummyCar2.translateZ(20);
+    dummyCar2.rotateY(Math.PI / 2);
+    const dummyCar3 = createCar(0xffffff, true);
+    dummyCar3.translateX(20);
+    dummyCar3.translateZ(30);
+    dummyCar3.rotateY(Math.PI / 2);
+    const dummyCar4 = createCar(0xff00ff, true);
+    dummyCar4.translateX(20);
+    dummyCar4.translateZ(40);
+    dummyCar4.rotateY(Math.PI / 2);
+    const dummyCar5 = createCar(0x00000, true);
+    dummyCar5.translateX(20);
+    dummyCar5.translateZ(50);
+    dummyCar5.rotateY(Math.PI / 2);
+    const dummyCar6 = createCar(0x00ff00, true);
+    dummyCar6.translateX(-20);
+    dummyCar6.translateZ(10);
+    dummyCar6.rotateY(- Math.PI / 2);
+    const dummyCar7 = createCar(0xff0000, true);
+    dummyCar7.translateX(-20);
+    dummyCar7.translateZ(20);
+    dummyCar7.rotateY(- Math.PI / 2);
+    const dummyCar8 = createCar(0x5500ff, true);
+    dummyCar8.translateX(-20);
+    dummyCar8.translateZ(30);
+    dummyCar8.rotateY(- Math.PI / 2);
+    const dummyCar9 = createCar(0x0055ff, true);
+    dummyCar9.translateX(-20);
+    dummyCar9.translateZ(40);
+    dummyCar9.rotateY(- Math.PI / 2);
+    const dummyCar10 = createCar(0xff0055, true);
+    dummyCar10.translateX(-20);
+    dummyCar10.translateZ(50);
+    dummyCar10.rotateY(- Math.PI / 2);
+
     const circuit = new THREE.Group();
     circuit.add(planeObject);
     circuit.add(curveMesh);
@@ -441,6 +646,16 @@ function createCircuit(){
     circuit.add(curvePart8);
     circuit.add(curvePart9);
     circuit.add(curvePart10);
+    circuit.add(dummyCar)
+    circuit.add(dummyCar2)
+    circuit.add(dummyCar3)
+    circuit.add(dummyCar4)
+    circuit.add(dummyCar5)
+    circuit.add(dummyCar6)
+    circuit.add(dummyCar7)
+    circuit.add(dummyCar8)
+    circuit.add(dummyCar9)
+    circuit.add(dummyCar10)
     return circuit;
 }
 
@@ -483,7 +698,7 @@ function loadObjects(sceneGraph) {
 
     sceneGraph.add(createLandscape());
     sceneGraph.add(createCircuit());
-    sceneGraph.add(createCar());
+    sceneGraph.add(createCar(0xff0000));
 }
 
 // Create the car bounding box
@@ -500,6 +715,7 @@ const checkpointsArray = fillCheckpoints();
 // Set the first checkpoint and add the bounding sphere
 var checkpoint = checkpointsArray[0];
 checkpoint.name = "checkpoint1";
+document.getElementById("checkpoints").innerHTML = "CHECKPOINT: 0/" + checkpointsArray.length;
 sceneElements.sceneGraph.add(checkpoint);    
 
 var checkpointCoordinates = new THREE.Vector3(checkpoint.position.x, 0, checkpoint.position.z);
@@ -516,19 +732,34 @@ var checkpointIndex = 1;
 var car_x = 2;
 var car_z = 2.3;
 
+
+var steeringWheelAngle = 0;
+
+var cameraControl = false;
+
+var laps = 0;
+
 // Function for frame updates
 function computeFrame(time) {
 
     const car = sceneElements.sceneGraph.getObjectByName("car");
+
     const leftFrontWheel = car.getObjectByName("leftFrontWheel");
     const rightFrontWheel = car.getObjectByName("rightFrontWheel");
     const leftBackWheel = car.getObjectByName("leftBackWheel");
     const rightBackWheel = car.getObjectByName("rightBackWheel");
 
+    const steer = car.getObjectByName("steeringWheel").getObjectByName("steer");
+    const torus = car.getObjectByName("steeringWheel").getObjectByName("torus");
+
+
 
     if (keyD) {     // Rotate right
         rightFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         rightFrontWheel.rotateZ(- Math.PI/2);
+
+        steer.rotation.z = (-Math.PI / 4) + Math.PI / 6;
+        torus.rotation.z = (-Math.PI / 4) + (4 * Math.PI / 6 + 0.1);
 
         leftFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         leftFrontWheel.rotateZ( - Math.PI/2);
@@ -537,6 +768,7 @@ function computeFrame(time) {
             car.rotateY(-0.01);
         else if(accelaration > 0)// If gowing backwards
             car.rotateY(0.01);
+
     }
     else{           // Reset wheels position due to 2 keys pressed conflict
         rightFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
@@ -546,6 +778,7 @@ function computeFrame(time) {
         leftFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         leftFrontWheel.rotateZ(-Math.PI / 2);
         leftFrontWheel.rotateX(- Math.atan(car_x/car_z));
+
     }
     if (keyW ) {    // Accelarate
         if(accelaration > -2)
@@ -554,6 +787,9 @@ function computeFrame(time) {
     if (keyA) {     // Rotate Left
         leftFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         leftFrontWheel.rotateZ(Math.PI / 2);
+
+        steer.rotation.z = (Math.PI / 4) + (Math.PI / 6);
+        torus.rotation.z = (Math.PI / 4) + (4 * Math.PI / 6 + 0.1);
 
         rightFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         rightFrontWheel.rotateZ(-Math.PI / 2);
@@ -575,8 +811,12 @@ function computeFrame(time) {
     if(keyD && keyA && accelaration != 0){ // Solve key conflit
         if( accelaration < 0)   // If going forwards
             car.rotateY(0.01);
-        else                    // If going backwards
+        else{                    // If going backwards
             car.rotateY(0.01 * -1);
+        }
+
+        steer.rotation.z = (Math.PI / 4) + (Math.PI / 6);
+        torus.rotation.z = (Math.PI / 4) + (4 * Math.PI / 6 + 0.1);
     }
     if(!keyD && !keyA){  // If no rotating key is pressed
         leftFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
@@ -586,8 +826,40 @@ function computeFrame(time) {
         rightFrontWheel.lookAt(car.position.x, car.position.y + 1, car.position.z);
         rightFrontWheel.rotateZ(-Math.PI / 2);
         rightFrontWheel.rotateX(- Math.atan(car_x/car_z));
+
+        steer.rotation.z = (Math.PI / 6);
+        torus.rotation.z = 4 * Math.PI / 6 + 0.1;
     }
 
+    if((key1 && cameraType == "FPS") || cameraControl == true){
+        if(cameraControl == false)
+            sceneElements.firstPersonControl.enabled = false;
+        else{
+            sceneElements.orbitControl.enabled = false;
+            cameraControl = false;
+        }
+
+        cameraType = "ORBIT"
+        sceneElements.orbitControl = new THREE.OrbitControls(sceneElements.camera, sceneElements.renderer.domElement);
+        sceneElements.orbitControl.screenSpacePanning = true;
+        sceneElements.orbitControl.maxPolarAngle = Math.PI / 2;
+        sceneElements.orbitControl.maxZoom = 100;
+
+        sceneElements.camera.position.set(0, 6, 20)
+    }
+    else if(key2  && cameraType == "ORBIT" ){
+        cameraType = "FPS"
+
+        sceneElements.firstPersonControl = new THREE.FlyControls( sceneElements.camera, sceneElements.renderer.domElement );
+        sceneElements.firstPersonControl.rollSpeed = 1;
+        sceneElements.firstPersonControl.movementSpeed = 0;
+        sceneElements.firstPersonControl.dragToLook = true;
+
+        sceneElements.orbitControl.enabled = false;
+
+        sceneElements.camera.position.set(0,4,0);
+    }
+    
     // Set accelaration to 0 if it is close from that
     if(accelaration > -0.001 && accelaration < 0.001 ){
         accelaration = 0;
@@ -602,8 +874,6 @@ function computeFrame(time) {
     rightBackWheel.rotateY(accelaration);
     leftBackWheel.rotateY(-accelaration);
 
-    // Keep the camera looking at the car
-    sceneElements.camera.lookAt(car.position );
 
     // Reset car bounding box
     carBoundingBox.copy( car.getObjectByName("bottomObject").geometry.boundingBox ).applyMatrix4( car.getObjectByName("bottomObject").matrixWorld );
@@ -611,14 +881,40 @@ function computeFrame(time) {
     // Check if car hits a checkpoint
     if( carBoundingBox.intersectsSphere(checkpointBoundingSphere)){
         sceneElements.sceneGraph.remove(sceneElements.sceneGraph.getObjectByName("checkpoint" + checkpointIndex));
-        if(checkpointIndex > 5)
-        checkpointIndex = 0;
+        if(checkpointIndex > 5){
+            checkpointIndex = 0;
+            laps++;
+            document.getElementById("laps").innerHTML = "LAPS: " + laps;
+        }
         checkpoint = checkpointsArray[checkpointIndex++];
+        document.getElementById("checkpoints").innerHTML = "CHECKPOINT: " +  (checkpointIndex - 1) + "/" + checkpointsArray.length;
         checkpoint.name = "checkpoint" + checkpointIndex;
         sceneElements.sceneGraph.add(checkpoint);
         checkpointCoordinates = new THREE.Vector3(checkpoint.position.x, 0, checkpoint.position.z);
         checkpointBoundingSphere = new THREE.Sphere(checkpointCoordinates, 12.5);
     }
+
+    if( cameraType == "FPS"){
+        sceneElements.firstPersonControl.update( sceneElements.clock.getDelta() );
+    }
+    else if(cameraType == "ORBIT")
+        sceneElements.camera.lookAt(car.position.x, car.position.y + 2, car.position.z);
+
+
+    const cameraPosition = new THREE.Vector3().setFromMatrixPosition(sceneElements.camera.matrixWorld);
+    if(cameraPosition.x > 500 || cameraPosition.x < -500)
+        cameraControl = true;
+    if(cameraPosition.z > 500 || cameraPosition.z < -500)
+        cameraControl = true;
+
+    if(car.position.x > 500 )
+        car.position.x = 499;
+    else if(car.position.x < -500)
+        car.position.x = -499;
+    if(car.position.z > 500 )
+        car.position.z = 499 ;
+    else if(car.position.z < -500)
+        car.position.z = -499;
 
     // Rendering
     helper.render(sceneElements);

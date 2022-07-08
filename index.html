@@ -6,9 +6,14 @@
 
 	<title> Racing Game </title>
 
+	<link rel="stylesheet" href="./style.css">
+
+
 	<!-- three.js modules -->
 	<script type="text/javascript" src="./modules/three/build/three.js" defer></script>
 	<script type="text/javascript" src="./modules/three/examples/js/controls/OrbitControls.js" defer></script>
+	<script type="text/javascript" src="./modules/three/examples/js/controls/FlyControls.js" defer></script>
+	<script type="text/javascript" src="./modules/three/examples/js/controls/FirstPersonControls.js" defer></script>
 	<!-- ---------------------------- -->
 
 
@@ -20,6 +25,8 @@
 
 <body style="margin:0px">
 	<div id="scenario"> </div>
+	<div id="checkpoints">CHECKPOINT: 0/0</div>
+	<div id="laps">LAPS: 0</div>
 </body>
 
 </html>
